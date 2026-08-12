@@ -1,62 +1,101 @@
-import readline from "readline/promises";
+import readline from 'readline/promises';
 import { stdin as input, stdout as output } from 'process';
 
 const rl = readline.createInterface({ input, output });
- //?? No eliminar las líneas de arriba ??//
 
-// ?? Escribe tu código aquí ??
-let systemName: string = "nombre del sistema";
-let version: number = 1.1;
-let userName: string = "Ademir";
+// Interface Task
+interface Task {
+    id: number;
+    title: string;
+    completed: boolean;
+}
 
-console.log("=============================");
-console.log(" " + systemName + " v" + version);
-console.log(" Bienvenido, " + userName + "!");
-console.log(" Proximo version: v" + (version + 0.1));
-console.log("=============================");
-// ?? No eliminar las líneas de abajo ??
+// Arreglo de tareas
+let tasks: Task[] = [];
 
-let tareas: string[] = [];
-let salir = false;
-while (!salir) {
-    console.log("\n======Menu de tareas======");
+// Contador para los IDs
+let nextId: number = 1;
+
+// Agregar tarea
+const addTask = (title: string) => {
+
+    const task: Task = {
+        id: nextId,
+        title: title,
+        completed: false
+    };
+
+    tasks.push(task);
+    nextId++;
+
+    console.log("Tarea agregada.");
+};
+
+// Listar tareas
+const listTasks = () => {
+
+    if (tasks.length === 0) {
+        console.log("No hay tareas.");
+        return;
+    }
+
+    for (let i = 0; i < tasks.length; i++) {
+
+        const task = tasks[i];
+
+        const status = task.completed ? "completed" : "pending";
+
+        console.log(`[${task.id}] ${task.title} - ${status}`);
+    }
+};
+
+// Eliminar última tarea
+const removeTask = () => {
+
+    const removedTask = tasks.pop();
+
+    if (removedTask) {
+        console.log(`Tarea eliminada: ${removedTask.title}`);
+    } else {
+        console.log("No hay tareas para eliminar.");
+    }
+};
+
+// Menú
+let option: string = "";
+
+while (option !== "4") {
+
+    console.log("\n=== MENÚ ===");
     console.log("1. Agregar tarea");
-    console.log("2. Eliminar ultima tarea");
-    console.log("3. listar tareas");
+    console.log("2. Eliminar última tarea");
+    console.log("3. Listar tareas");
     console.log("4. Salir");
 
-    const opcion = await rl.question("Seleccione una opción: ");
-    switch (opcion) {
-        case "1":
-            const titulo = await rl.question("Escribe el titulo de la tarea: ");
-            tareas.push(titulo);
-            console.log(`Tarea "${titulo}" agregada correctamente.`);
-            break;
-            case "2":
-                const tareaEliminada = tareas.pop();
-                if (tareaEliminada) {
-                    console.log(`Tarea "${tareaEliminada}" eliminada correctamente.`);  
-                } else {
-                        console.log("No hay tareas para eliminar.");
-                    }
-            break;
-            case "3":
-            console.log("\n====Lista de tareas====");
-            if (tareas.length === 0) {
-                console.log("No hay tareas registradas.");
-            }else {
-                    for (let i = 0; i < tareas.length; i++) {
-                        console.log(`${i + 1}. ${tareas[i]}`);
-                    }
+    option = await rl.question("Elige una opción: ");
 
-    }
-    break;
-case "4":
-    salir = true;
-    console.log("Hasta luego");
-    break;
-default:
-    console.log("Opción inválida.");
+    if (option === "1") {
+
+        const title = await rl.question("Ingrese el título de la tarea: ");
+
+        addTask(title);
+
+    } else if (option === "2") {
+
+        removeTask();
+
+    } else if (option === "3") {
+
+        listTasks();
+
+    } else if (option === "4") {
+
+        console.log("Saliendo...");
+
+    } else {
+
+        console.log("Opción no válida.");
     }
 }
+
 rl.close();
