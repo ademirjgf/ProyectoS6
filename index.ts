@@ -1,101 +1,181 @@
-import readline from 'readline/promises';
-import { stdin as input, stdout as output } from 'process';
+import readline from "readline/promises";
+import { stdin as input, stdout as output } from "process";
 
 const rl = readline.createInterface({ input, output });
 
-// Interface Task
 interface Task {
-    id: number;
-    title: string;
-    completed: boolean;
+  id: number;
+  title: string;
+  completed: boolean;
 }
 
-// Arreglo de tareas
-let tasks: Task[] = [];
+const tasks: Task[] = [];
 
-// Contador para los IDs
-let nextId: number = 1;
+let nextId = 1;
 
-// Agregar tarea
-const addTask = (title: string) => {
+// ============================================
+// SIMULAR GUARDADO EN BASE DE DATOS
+// ============================================
 
-    const task: Task = {
-        id: nextId,
-        title: title,
-        completed: false
+const saveToDB = (task: Task): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log(`Tarea "${task.title}" guardada en la base de datos.`);
+      resolve();
+    }, 2000);
+  });
+};
+
+// ============================================
+// AGREGAR TAREA (ASÍNCRONA)
+// ============================================
+
+const addTask = async (title: string) => {
+  try {
+    if (title.trim() === "") {
+      throw new Error("El título de la tarea no puede estar vacío.");
+    }
+
+    const newTask: Task = {
+      id: nextId,
+      title: title,
+      completed: false,
     };
 
-    tasks.push(task);
+    await saveToDB(newTask);
+
+    tasks.push(newTask);
     nextId++;
 
-    console.log("Tarea agregada.");
+    console.log("Tarea agregada correctamente.");
+  } catch (error) {
+    console.log((error as Error).message);
+  }
 };
 
-// Listar tareas
+// ============================================
+// LISTAR TAREAS
+// ============================================
+
 const listTasks = () => {
+  if (tasks.length === 0) {
+    console.log("No hay tareas.");
+    return;
+  }
 
-    if (tasks.length === 0) {
-        console.log("No hay tareas.");
-        return;
-    }
+  const taskStrings = tasks.map((task) => {
+    const { id, title, completed } = task;
 
-    for (let i = 0; i < tasks.length; i++) {
+    const status = completed ? "completed" : "pending";
 
-        const task = tasks[i];
+    return `[${id}] ${title} - ${status}`;
+  });
 
-        const status = task.completed ? "completed" : "pending";
-
-        console.log(`[${task.id}] ${task.title} - ${status}`);
-    }
+  taskStrings.forEach((taskString) => {
+    console.log(taskString);
+  });
 };
 
-// Eliminar última tarea
+// ============================================
+// ELIMINAR ÚLTIMA TAREA
+// ============================================
+
 const removeTask = () => {
+  const removedTask = tasks.pop();
 
-    const removedTask = tasks.pop();
-
-    if (removedTask) {
-        console.log(`Tarea eliminada: ${removedTask.title}`);
-    } else {
-        console.log("No hay tareas para eliminar.");
-    }
+  if (removedTask) {
+    console.log(`Tarea eliminada: ${removedTask.title}`);
+  } else {
+    console.log("No hay tareas para eliminar.");
+  }
 };
 
-// Menú
-let option: string = "";
+// ============================================
+// MARCAR COMO COMPLETADA
+// ============================================
 
-while (option !== "4") {
+const markCompleted = (id: number) => {
+  const task = tasks.find((task) => task.id === id);
 
-    console.log("\n=== MENÚ ===");
-    console.log("1. Agregar tarea");
-    console.log("2. Eliminar última tarea");
-    console.log("3. Listar tareas");
-    console.log("4. Salir");
+  if (task) {
+    task.completed = true;
+    console.log(`Tarea "${task.title}" marcada como completada.`);
+  } else {
+    console.log("No se encontró una tarea con ese ID.");
+  }
+};
 
-    option = await rl.question("Elige una opción: ");
+// ============================================
+// FILTRAR PENDIENTES
+// ============================================
 
-    if (option === "1") {
+const filterPending = () => {
+  return tasks.filter((task) => task.completed === false);
+};
 
-        const title = await rl.question("Ingrese el título de la tarea: ");
+// ============================================
+// FILTRAR COMPLETADAS
+// ============================================
 
-        addTask(title);
+const filterCompleted = () => {
+  return tasks.filter((task) => task.completed === true);
+};
 
-    } else if (option === "2") {
+// ============================================
+// MENÚ
+// ============================================
 
-        removeTask();
+let option = "";
 
-    } else if (option === "3") {
+while (option !== "7") {
+  console.log("\n===== GESTOR DE TAREAS =====");
+  console.log("1. Agregar tarea");
+  console.log("2. Eliminar última tarea");
+  console.log("3. Listar tareas");
+  console.log("4. Marcar tarea como completada");
+  console.log("5. Ver tareas pendientes");
+  console.log("6. Ver tareas completadas");
+  console.log("7. Salir");
 
-        listTasks();
+  option = await rl.question("Elige una opción: ");
 
-    } else if (option === "4") {
+  if (option === "1") {
+    const title = await rl.question("Escribe el título de la tarea: ");
 
-        console.log("Saliendo...");
+    await addTask(title);
+  } else if (option === "2") {
+    removeTask();
+  } else if (option === "3") {
+    listTasks();
+  } else if (option === "4") {
+    const id = Number(await rl.question("Escribe el ID de la tarea: "));
 
+    markCompleted(id);
+  } else if (option === "5") {
+    const pendingTasks = filterPending();
+
+    if (pendingTasks.length === 0) {
+      console.log("No hay tareas pendientes.");
     } else {
-
-        console.log("Opción no válida.");
+      pendingTasks.forEach((task) => {
+        console.log(`[${task.id}] ${task.title} - pending`);
+      });
     }
+  } else if (option === "6") {
+    const completedTasks = filterCompleted();
+
+    if (completedTasks.length === 0) {
+      console.log("No hay tareas completadas.");
+    } else {
+      completedTasks.forEach((task) => {
+        console.log(`[${task.id}] ${task.title} - completed`);
+      });
+    }
+  } else if (option === "7") {
+    console.log("¡Hasta luego!");
+  } else {
+    console.log("Opción no válida.");
+  }
 }
 
 rl.close();
